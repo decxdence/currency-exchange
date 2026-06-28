@@ -30,6 +30,7 @@ public class ExchangeRateDao {
                         target_currency_id = ?,
                         rate = ?
                     WHERE id = ?
+                    RETURNING *
             """;
 
     private static final String FIND_ALL_SQL = """
@@ -43,6 +44,10 @@ public class ExchangeRateDao {
     private static final String FIND_BY_ID_SQL = FIND_ALL_SQL + """
             WHERE id = ?
             """;
+
+   private static final String FIND_BY_TWO_CODES_SQL = FIND_ALL_SQL + """
+           WHERE base_currency_id = ? AND target_currency_id = ?
+           """;
 
 
     private ExchangeRateDao() {
@@ -76,9 +81,9 @@ public class ExchangeRateDao {
         try (var connection = ConnectionManager.get();
              var statement = connection.prepareStatement(SAVE_SQL, Statement.RETURN_GENERATED_KEYS)) {
 
-            statement.setLong(2, exchangeRate.getBaseCurrencyId());
-            statement.setLong(3, exchangeRate.getTargetCurrencyId());
-            statement.setBigDecimal(4, exchangeRate.getRate());
+            statement.setLong(1, exchangeRate.getBaseCurrencyId());
+            statement.setLong(2, exchangeRate.getTargetCurrencyId());
+            statement.setBigDecimal(3, exchangeRate.getRate());
 
             statement.executeUpdate();
             var resultSet = statement.getGeneratedKeys();
@@ -91,7 +96,7 @@ public class ExchangeRateDao {
         }
     }
 
-    public void update(ExchangeRate exchangeRate) {
+    public ExchangeRate update(ExchangeRate exchangeRate) {
         try (var connection = ConnectionManager.get();
              var statement = connection.prepareStatement(UPDATE_SQL)) {
 
@@ -100,10 +105,18 @@ public class ExchangeRateDao {
             statement.setBigDecimal(3, exchangeRate.getRate());
             statement.setLong(4, exchangeRate.getId());
 
-            statement.executeUpdate();
+            var resultSet = statement.executeQuery();
+            if (resultSet.next()) {
+                exchangeRate.setId(resultSet.getLong(1));
+                exchangeRate.setBaseCurrencyId(resultSet.getLong(2));
+                exchangeRate.setTargetCurrencyId(resultSet.getLong(3));
+                exchangeRate.setRate(resultSet.getBigDecimal(4));
+            }
+
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+        return exchangeRate;
     }
 
     public List<ExchangeRate> findAll() {
@@ -136,4 +149,22 @@ public class ExchangeRateDao {
             throw new RuntimeException(e);
         }
     }
+
+    public Optional<ExchangeRate> findByBaseAndTargetId(Long baseCurrencyId, Long targetCurrencyId) {
+        try (var connection = ConnectionManager.get();
+            var statement = connection.prepareStatement(FIND_BY_TWO_CODES_SQL)) {
+
+            statement.setLong(1, baseCurrencyId);
+            statement.setLong(2, targetCurrencyId);
+
+            var resultSet = statement.executeQuery();
+            if (resultSet.next()) {
+                return Optional.of(buildExchangeRate(resultSet));
+            }
+            return Optional.empty();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 }

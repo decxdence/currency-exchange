@@ -37,6 +37,10 @@ public class CurrencyDao {
                     FROM currencies
             """;
 
+    private static final String FIND_BY_CODE_SQL = FIND_ALL_SQL + """
+                    WHERE code = ?
+            """;
+
     private static final String FIND_BY_ID_SQL = FIND_ALL_SQL + """
                     WHERE id = ?
             """;
@@ -58,6 +62,25 @@ public class CurrencyDao {
         );
     }
 
+    public Optional<Currency> findByCode(String code) {
+        try (var connection = ConnectionManager.get();
+             var statement = connection.prepareStatement(FIND_BY_CODE_SQL)) {
+
+            statement.setString(1, code);
+
+            var resultSet = statement.executeQuery();
+            if (resultSet.next()) {
+                Currency currency = buildCurrency(resultSet);
+
+                return Optional.of(currency);
+            }
+
+            return Optional.empty();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public Optional<Currency> findById(Long id) {
         try (var connection = ConnectionManager.get();
              var statement = connection.prepareStatement(FIND_BY_ID_SQL)) {
@@ -76,6 +99,7 @@ public class CurrencyDao {
             throw new RuntimeException(e);
         }
     }
+
 
     public List<Currency> findAll() {
         try (var connection = ConnectionManager.get();

@@ -3,7 +3,9 @@ package com.decxdence.currencyexchange.util;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Objects;
 
 public final class DatabaseInitializator {
 
@@ -12,11 +14,29 @@ public final class DatabaseInitializator {
 
     public static void initialize() {
         try (var connection = ConnectionManager.get();
-             var inputStream = DatabaseInitializator.class.getClassLoader().getResourceAsStream("schema.sql");
-             var sql = new BufferedReader(new InputStreamReader(inputStream));
-             var statement = connection.prepareStatement(sql.readAllAsString())) {
+             var inputStream = Objects.requireNonNull(
+                     DatabaseInitializator
+                             .class
+                             .getClassLoader()
+                             .getResourceAsStream("schema.sql"),
+                     "schema.sql is not found"
+             );
+             var bufferedReader = new BufferedReader(new InputStreamReader(inputStream))) {
 
-            statement.execute();
+            String[] sqlQueries = bufferedReader.readAllAsString().split(";");
+
+            for (String query : sqlQueries) {
+
+                query = query.trim();
+
+                if (query.isBlank()) {
+                    continue;
+                }
+
+                try (var statement = connection.prepareStatement(query)) {
+                    statement.execute();
+                }
+            }
 
         } catch (IOException | SQLException e) {
             throw new RuntimeException(e);

@@ -1,16 +1,17 @@
 package com.decxdence.currencyexchange;
 
 import com.decxdence.currencyexchange.dao.CurrencyDao;
+import com.decxdence.currencyexchange.dao.ExchangeRateDao;
 import com.decxdence.currencyexchange.model.Currency;
+import com.decxdence.currencyexchange.service.CurrencyService;
+import com.decxdence.currencyexchange.service.ExchangeRateService;
 
 public class Main {
     public static void main(String[] args) {
-        // DatabaseInitializator.initialize();
-        saveEUR();
+        ExchangeRateService exchangeRateService = ExchangeRateService.getInstance();
+        ExchangeRateDao exchangeRateDao = ExchangeRateDao.getInstance();
 
-        var currencyDao = CurrencyDao.getInstance();
-        var currency4 = currencyDao.findAll();
-        System.out.println(currency4);
+
     }
 
     private static void saveUSD() {
