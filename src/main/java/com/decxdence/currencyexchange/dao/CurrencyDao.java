@@ -1,5 +1,7 @@
 package com.decxdence.currencyexchange.dao;
 
+import com.decxdence.currencyexchange.exception.CurrencyNotFoundException;
+import com.decxdence.currencyexchange.exception.DatabaseException;
 import com.decxdence.currencyexchange.model.Currency;
 import com.decxdence.currencyexchange.util.ConnectionManager;
 
@@ -53,13 +55,18 @@ public class CurrencyDao {
         return INSTANCE;
     }
 
-    private static Currency buildCurrency(ResultSet resultSet) throws SQLException {
-        return new Currency(
-                resultSet.getLong("id"),
-                resultSet.getString("code"),
-                resultSet.getString("full_name"),
-                resultSet.getString("sign")
-        );
+    private static Currency buildCurrency(ResultSet resultSet) {
+
+        try {
+            return new Currency(
+                    resultSet.getLong("id"),
+                    resultSet.getString("code"),
+                    resultSet.getString("full_name"),
+                    resultSet.getString("sign")
+            );
+        } catch (SQLException e) {
+            throw new DatabaseException(e);
+        }
     }
 
     public Optional<Currency> findByCode(String code) {
@@ -77,7 +84,7 @@ public class CurrencyDao {
 
             return Optional.empty();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DatabaseException(e);
         }
     }
 
@@ -96,12 +103,11 @@ public class CurrencyDao {
 
             return Optional.empty();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DatabaseException(e);
         }
     }
 
-
-    public List<Currency> findAll() {
+    public List<Currency> findAll()  {
         try (var connection = ConnectionManager.get();
             var  statement = connection.prepareStatement(FIND_ALL_SQL)) {
 
@@ -113,7 +119,7 @@ public class CurrencyDao {
             }
             return currencies;
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DatabaseException(e);
         }
     }
 
@@ -129,7 +135,7 @@ public class CurrencyDao {
             statement.executeUpdate();
 
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DatabaseException(e);
         }
     }
 
@@ -140,7 +146,7 @@ public class CurrencyDao {
             statement.setLong(1, id);
             return statement.executeUpdate() == 1;
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DatabaseException(e);
         }
     }
 
@@ -160,7 +166,7 @@ public class CurrencyDao {
             }
             return currency;
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DatabaseException(e);
         }
     }
 

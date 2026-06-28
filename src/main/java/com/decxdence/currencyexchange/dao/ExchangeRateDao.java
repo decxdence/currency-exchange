@@ -1,5 +1,6 @@
 package com.decxdence.currencyexchange.dao;
 
+import com.decxdence.currencyexchange.exception.DatabaseException;
 import com.decxdence.currencyexchange.model.ExchangeRate;
 import com.decxdence.currencyexchange.util.ConnectionManager;
 
@@ -57,13 +58,18 @@ public class ExchangeRateDao {
         return INSTANCE;
     }
 
-    private ExchangeRate buildExchangeRate(ResultSet resultSet) throws SQLException {
-        return new ExchangeRate(
-                resultSet.getLong("id"),
-                resultSet.getLong("base_currency_id"),
-                resultSet.getLong("target_currency_id"),
-                resultSet.getBigDecimal("rate")
-        );
+    private ExchangeRate buildExchangeRate(ResultSet resultSet) {
+
+        try {
+            return new ExchangeRate(
+                    resultSet.getLong("id"),
+                    resultSet.getLong("base_currency_id"),
+                    resultSet.getLong("target_currency_id"),
+                    resultSet.getBigDecimal("rate")
+            );
+        } catch (SQLException e) {
+            throw new DatabaseException(e);
+        }
     }
 
     public boolean delete(Long id) {
@@ -73,7 +79,7 @@ public class ExchangeRateDao {
             statement.setLong(1, id);
             return statement.executeUpdate() == 1;
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DatabaseException(e);
         }
     }
 
@@ -92,7 +98,7 @@ public class ExchangeRateDao {
             }
             return exchangeRate;
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DatabaseException(e);
         }
     }
 
@@ -114,7 +120,7 @@ public class ExchangeRateDao {
             }
 
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DatabaseException(e);
         }
         return exchangeRate;
     }
@@ -130,7 +136,7 @@ public class ExchangeRateDao {
             }
             return exchangeRates;
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DatabaseException(e);
         }
     }
 
@@ -146,7 +152,7 @@ public class ExchangeRateDao {
             }
             return Optional.empty();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DatabaseException(e);
         }
     }
 
@@ -163,7 +169,7 @@ public class ExchangeRateDao {
             }
             return Optional.empty();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DatabaseException(e);
         }
     }
 

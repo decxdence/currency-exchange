@@ -7,6 +7,7 @@ import com.decxdence.currencyexchange.dto.request.ExchangeRateReadRequestDto;
 import com.decxdence.currencyexchange.dto.request.ExchangeRateUpdateRequestDto;
 import com.decxdence.currencyexchange.dto.response.CurrencyResponseDto;
 import com.decxdence.currencyexchange.dto.response.ExchangeRateResponseDto;
+import com.decxdence.currencyexchange.exception.*;
 import com.decxdence.currencyexchange.model.Currency;
 import com.decxdence.currencyexchange.model.ExchangeRate;
 
@@ -50,56 +51,72 @@ public class ExchangeRateService {
         if (exchangeRateReadRequestDtoIsValid(exchangeRateReadRequestDto)) {
 
             var baseCurrencyId = currencyDao.findByCode(exchangeRateReadRequestDto.getBaseCurrencyCode())
-                    .orElseThrow(() -> new RuntimeException("Currency Not Found"))
+                    .orElseThrow(() -> new ExchangeRateNotFoundException())
                     .getId();
             var targetCurrencyId = currencyDao.findByCode(exchangeRateReadRequestDto.getTargetCurrencyCode())
-                    .orElseThrow(() -> new RuntimeException("Currency Not Found"))
+                    .orElseThrow(() -> new ExchangeRateNotFoundException())
                     .getId();
 
             var exchangeRate = exchangeRateDao.findByBaseAndTargetId(baseCurrencyId, targetCurrencyId);
 
-            var baseCurrency = currencyDao.findById(exchangeRate.orElseThrow(() -> new RuntimeException("Currency not found")).getBaseCurrencyId())
-                    .orElseThrow(() -> new RuntimeException("Currency not found"));
-            var targetCurrency = currencyDao.findById(exchangeRate.orElseThrow(() -> new RuntimeException("Currency not found")).getTargetCurrencyId())
-                    .orElseThrow(() -> new RuntimeException("Currency not found"));
+            if (exchangeRate.isPresent()) {
 
-            var baseCurrencyDto = buildCurrencyDto(baseCurrency);
-            var targetCurrencyDto = buildCurrencyDto(targetCurrency);
+                var baseCurrency = currencyDao.findById(baseCurrencyId).get();
+                var targetCurrency = currencyDao.findById(targetCurrencyId).get();
 
-            return new ExchangeRateResponseDto(baseCurrencyDto, targetCurrencyDto, exchangeRate.orElseThrow(() -> new RuntimeException("ExchangeRate not found"))
-                    .getRate());
+                var baseCurrencyDto = buildCurrencyDto(baseCurrency);
+                var targetCurrencyDto = buildCurrencyDto(targetCurrency);
+
+                return new ExchangeRateResponseDto(baseCurrencyDto, targetCurrencyDto,
+                        exchangeRate.get().getRate());
+
+            } else {
+                throw new ExchangeRateNotFoundException();
+            }
         }
         throw new RuntimeException("Invalid exchangeRate Request");
     }
 
     public ExchangeRateResponseDto save(ExchangeRateCreateRequestDto exchangeRateCreateRequestDto) {
+
         if (exchangeRateCreateRequestDtoIsValid(exchangeRateCreateRequestDto)) {
+
             var baseCurrencyId = currencyDao.findByCode(exchangeRateCreateRequestDto.getBaseCurrencyCode())
-                    .orElseThrow(() -> new RuntimeException("Currency Not Found"))
+                    .orElseThrow(() -> new CurrencyNotFoundException())
                     .getId();
             var targetCurrencyId = currencyDao.findByCode(exchangeRateCreateRequestDto.getTargetCurrencyCode())
-                    .orElseThrow(() -> new RuntimeException("Currency Not Found"))
+                    .orElseThrow(() -> new CurrencyNotFoundException())
                     .getId();
+
+            if (exchangeRateExistsByBaseAndTargetId(baseCurrencyId, targetCurrencyId)) {
+                throw new ExchangeRateAlreadyExists();
+            }
 
             var savedExchangeRate = exchangeRateDao.save(new ExchangeRate(baseCurrencyId, targetCurrencyId, exchangeRateCreateRequestDto.getRate()));
 
             return buildExchangeRateResponseDto(savedExchangeRate);
         }
-        throw new RuntimeException("Invalid ExchangeRate Request");
+        throw new MissingRequiredFieldException();
     }
 
-    public ExchangeRateResponseDto update(String code1, String code2 ,ExchangeRateUpdateRequestDto exchangeRateUpdateRequestDto) {
+    private boolean exchangeRateExistsByBaseAndTargetId(Long baseCurrencyId, Long targetCurrencyId) {
+        var exchangeRate = exchangeRateDao.findByBaseAndTargetId(baseCurrencyId, targetCurrencyId);
+
+        return exchangeRate.isPresent();
+    }
+
+    public ExchangeRateResponseDto update(String code1, String code2, ExchangeRateUpdateRequestDto exchangeRateUpdateRequestDto) {
 
         if (exchangeRateUpdateRequestDtoIsValid(exchangeRateUpdateRequestDto)) {
             var baseCurrencyId = currencyDao.findByCode(code1)
-                    .orElseThrow(() -> new RuntimeException("Currency Not Found"))
+                    .orElseThrow(() -> new ExchangeRateNotFoundException())
                     .getId();
             var targetCurrencyId = currencyDao.findByCode(code2)
-                    .orElseThrow(() -> new RuntimeException("Currency Not Found"))
+                    .orElseThrow(() -> new ExchangeRateNotFoundException())
                     .getId();
 
             var exchangeRate = exchangeRateDao.findByBaseAndTargetId(baseCurrencyId, targetCurrencyId)
-                    .orElseThrow(() -> new RuntimeException("Currency Not Found"));
+                    .orElseThrow(() -> new ExchangeRateNotFoundException());
 
             exchangeRate.setRate(exchangeRateUpdateRequestDto.getRate());
 
@@ -109,7 +126,7 @@ public class ExchangeRateService {
 
         }
 
-        throw new RuntimeException("Not Implemented");
+        throw new MissingRequiredFieldException();
     }
 
     private ExchangeRateResponseDto buildExchangeRateResponseDto(ExchangeRate exchangeRate) {
@@ -126,15 +143,34 @@ public class ExchangeRateService {
     }
 
     private boolean exchangeRateCreateRequestDtoIsValid(ExchangeRateCreateRequestDto exchangeRateCreateRequestDto) {
-        return exchangeRateCreateRequestDto.getBaseCurrencyCode() != null
-                && exchangeRateCreateRequestDto.getTargetCurrencyCode() != null
-                && exchangeRateCreateRequestDto.getRate() != null
-                && (exchangeRateCreateRequestDto.getRate().compareTo(BigDecimal.ZERO) > 0);
+
+        var baseCode = exchangeRateCreateRequestDto.getBaseCurrencyCode();
+        var targetCode = exchangeRateCreateRequestDto.getTargetCurrencyCode();
+        var rate = exchangeRateCreateRequestDto.getRate();
+
+        baseCode = baseCode.toUpperCase();
+        targetCode = targetCode.toUpperCase();
+
+        if (baseCode.equals("^[A-Z]{3}")
+        && targetCode.equals("^[A-Z]{3}")
+        && rate.compareTo(BigDecimal.ZERO) > 0) {
+            return true;
+        }
+        throw new InvalidRequestException();
     }
 
     private boolean exchangeRateReadRequestDtoIsValid(ExchangeRateReadRequestDto exchangeRateReadRequestDto) {
-        return exchangeRateReadRequestDto.getBaseCurrencyCode() != null
-                && exchangeRateReadRequestDto.getTargetCurrencyCode() != null;
+        var baseCode = exchangeRateReadRequestDto.getBaseCurrencyCode();
+        var targetCode = exchangeRateReadRequestDto.getTargetCurrencyCode();
+
+        baseCode = baseCode.toUpperCase();
+        targetCode = targetCode.toUpperCase();
+
+        if (baseCode.matches("^[A-Z]{3}$]")
+                && targetCode.matches("^[A-Z]{3}$")) {
+            return true;
+        }
+        throw new InvalidPathException();
     }
 
     private boolean exchangeRateUpdateRequestDtoIsValid(ExchangeRateUpdateRequestDto exchangeRateUpdateRequestDto) {

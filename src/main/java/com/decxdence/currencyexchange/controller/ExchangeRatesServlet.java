@@ -1,6 +1,10 @@
 package com.decxdence.currencyexchange.controller;
 
 import com.decxdence.currencyexchange.dto.request.ExchangeRateCreateRequestDto;
+import com.decxdence.currencyexchange.dto.response.ErrorResponseDto;
+import com.decxdence.currencyexchange.exception.ApiException;
+import com.decxdence.currencyexchange.exception.InvalidRateFormatException;
+import com.decxdence.currencyexchange.exception.MissingRequiredFieldException;
 import com.decxdence.currencyexchange.service.ExchangeRateService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
@@ -21,25 +25,56 @@ public class ExchangeRatesServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
-        resp.setStatus(200);
-        resp.setContentType("application/json");
-        resp.setCharacterEncoding("UTF-8");
-
-        mapper.writeValue(resp.getWriter(), exchangeRateService.findAllExchangeRates());
+        try {
+            sendResponse(resp, 200, exchangeRateService.findAllExchangeRates());
+        } catch (ApiException e) {
+            sendError(resp, e, new ErrorResponseDto(e.getMessage()));
+        }
     }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
-        resp.setStatus(201);
+        try {
+            sendResponse(resp, 200, exchangeRateService.save(validateParameters(req)));
+        } catch (ApiException e) {
+            sendError(resp, e, new ErrorResponseDto(e.getMessage()));
+        }
+
+    }
+
+    private static void sendResponse(HttpServletResponse resp, int status, Object body) throws IOException {
+        resp.setStatus(status);
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
+        mapper.writeValue(resp.getWriter(), body);
+    }
 
-        mapper.writeValue(resp.getWriter(), exchangeRateService.save(new ExchangeRateCreateRequestDto(
-                req.getParameter("baseCurrencyCode"),
-                req.getParameter("targetCurrencyCode"),
-                new BigDecimal(req.getParameter("rate"))
-                )
-        ));
+    private static void sendError(HttpServletResponse resp, ApiException e, ErrorResponseDto err) throws IOException {
+        resp.setStatus(e.getStatus());
+        resp.setContentType("application/json");
+        resp.setCharacterEncoding("UTF-8");
+        mapper.writeValue(resp.getWriter(), err);
+    }
+
+    private static ExchangeRateCreateRequestDto validateParameters(HttpServletRequest req) throws ApiException {
+
+        var baseCode =  req.getParameter("baseCurrencyCode");
+        var targetCode = req.getParameter("targetCurrencyCode");
+        var rate = req.getParameter("rate");
+
+        if (baseCode != null || targetCode != null ||  rate != null) {
+            try {
+                var bigdecRate = new BigDecimal(baseCode);
+                return new ExchangeRateCreateRequestDto(
+                        baseCode,
+                        targetCode,
+                        bigdecRate
+                );
+            } catch (NumberFormatException e) {
+                throw new InvalidRateFormatException();
+            }
+        }
+        throw new MissingRequiredFieldException();
     }
 }

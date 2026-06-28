@@ -2,6 +2,10 @@ package com.decxdence.currencyexchange.controller;
 
 import com.decxdence.currencyexchange.dto.request.ExchangeRateReadRequestDto;
 import com.decxdence.currencyexchange.dto.request.ExchangeRateUpdateRequestDto;
+import com.decxdence.currencyexchange.dto.response.ErrorResponseDto;
+import com.decxdence.currencyexchange.exception.ApiException;
+import com.decxdence.currencyexchange.exception.InvalidPathException;
+import com.decxdence.currencyexchange.exception.InvalidRateFormatException;
 import com.decxdence.currencyexchange.service.ExchangeRateService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
@@ -22,18 +26,19 @@ public class ExchangeRateServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
-        resp.setStatus(200);
-        resp.setContentType("application/json");
-        resp.setCharacterEncoding("UTF-8");
 
         var code1 = extractCurrencyCode(req, resp)[0];
         var code2 = extractCurrencyCode(req, resp)[1];
 
-        mapper.writeValue(resp.getWriter(), exchangeRateService.findByBaseAndTargetCurrency(
-                new ExchangeRateReadRequestDto(
-                        code1,
-                        code2
-        )));
+        try {
+            sendResponse(resp, 200, exchangeRateService.findByBaseAndTargetCurrency(
+                    new ExchangeRateReadRequestDto(
+                            code1,
+                            code2
+                    )));
+        } catch (ApiException e) {
+            sendError(resp, e, new  ErrorResponseDto(e.getMessage()));
+        }
     }
 
     @Override
@@ -43,27 +48,51 @@ public class ExchangeRateServlet extends HttpServlet {
         var code1 = extractCurrencyCode(req, resp)[0];
         var code2 = extractCurrencyCode(req, resp)[1];
 
+        try {
+            parseRate(rate);
+            sendResponse(resp, 200, exchangeRateService.update(code1, code2, new ExchangeRateUpdateRequestDto(
+                    new BigDecimal(rate)
+            )));
+        } catch (ApiException e) {
+            sendError(resp, e, new ErrorResponseDto(e.getMessage()));
+        }
 
-        resp.setStatus(200);
-        resp.setContentType("application/json");
-        resp.setCharacterEncoding("UTF-8");
-
-        mapper.writeValue(resp.getWriter(), exchangeRateService.update(code1, code2, new ExchangeRateUpdateRequestDto(
-                new BigDecimal(rate)
-        )));
     }
 
     private String[] extractCurrencyCode(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
         var pathInfo = req.getPathInfo();
-        if (pathInfo == null || pathInfo.isBlank()  || pathInfo.equals("/")) {
-            resp.sendError(HttpServletResponse.SC_NOT_FOUND);
-            throw new RuntimeException("Currency not found");
+        if (pathInfo == null || pathInfo.length() != 7) {
+            throw new InvalidPathException();
         }
+
+
 
         String firstCurrencyCode = pathInfo.substring(1, 4);
         String secondCurrencyCode = pathInfo.substring(4);
 
         return new String[]{firstCurrencyCode, secondCurrencyCode};
+    }
+
+    private static void sendResponse(HttpServletResponse resp, int status, Object body) throws IOException {
+        resp.setStatus(status);
+        resp.setContentType("application/json");
+        resp.setCharacterEncoding("UTF-8");
+        mapper.writeValue(resp.getWriter(), body);
+    }
+
+    private static void sendError(HttpServletResponse resp, ApiException e, ErrorResponseDto err) throws IOException {
+        resp.setStatus(e.getStatus());
+        resp.setContentType("application/json");
+        resp.setCharacterEncoding("UTF-8");
+        mapper.writeValue(resp.getWriter(), err);
+    }
+
+    private BigDecimal parseRate(String rate) {
+        try {
+            return new BigDecimal(rate);
+        } catch (NumberFormatException e) {
+            throw new InvalidRateFormatException();
+        }
     }
 }

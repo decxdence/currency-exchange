@@ -1,6 +1,11 @@
 package com.decxdence.currencyexchange.controller;
 
 import com.decxdence.currencyexchange.dto.request.CurrencyRequestDto;
+import com.decxdence.currencyexchange.dto.response.ErrorResponseDto;
+import com.decxdence.currencyexchange.exception.ApiException;
+import com.decxdence.currencyexchange.exception.DatabaseException;
+import com.decxdence.currencyexchange.exception.InvalidPathException;
+import com.decxdence.currencyexchange.exception.MissingRequiredFieldException;
 import com.decxdence.currencyexchange.service.CurrencyService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
@@ -20,26 +25,51 @@ public class CurrenciesServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
-        resp.setStatus(200);
-        resp.setContentType("application/json");
-        resp.setCharacterEncoding("UTF-8");
-
-
-        mapper.writeValue(resp.getWriter(), currencyService.findAllCurrencies());
+        try {
+            sendResponse(resp, 200, currencyService.findAllCurrencies());
+        } catch (DatabaseException e) {
+            sendError(resp, e, new ErrorResponseDto(e.getMessage()));
+        }
     }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
-        resp.setStatus(201);
+
+           try {
+               sendResponse(resp, 201, currencyService.save(validateParameters(req)));
+           } catch (ApiException e) {
+               sendError(resp, e, new ErrorResponseDto(e.getMessage()));
+           }
+    }
+
+    private static void sendResponse(HttpServletResponse resp, int status, Object body) throws IOException {
+        resp.setStatus(status);
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
+        mapper.writeValue(resp.getWriter(), body);
+    }
 
-        mapper.writeValue(resp.getWriter(), currencyService.save(new CurrencyRequestDto(
-                req.getParameter("code"),
-                req.getParameter("name"),
-                req.getParameter("sign")
-        )));
+    private static void sendError(HttpServletResponse resp, ApiException e, ErrorResponseDto err) throws IOException {
+        resp.setStatus(e.getStatus());
+        resp.setContentType("application/json");
+        resp.setCharacterEncoding("UTF-8");
+        mapper.writeValue(resp.getWriter(), err);
+    }
 
+    private static CurrencyRequestDto validateParameters(HttpServletRequest req) throws ApiException {
+
+        var code =  req.getParameter("code");
+        var name = req.getParameter("name");
+        var sign = req.getParameter("sign");
+
+        if (code != null &&  name != null &&  sign != null) {
+            return new CurrencyRequestDto(
+                    req.getParameter("code"),
+                    req.getParameter("name"),
+                    req.getParameter("sign")
+            );
+        }
+        throw new MissingRequiredFieldException();
     }
 }
