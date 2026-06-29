@@ -4,7 +4,6 @@ import com.decxdence.currencyexchange.dto.request.CurrencyRequestDto;
 import com.decxdence.currencyexchange.dto.response.ErrorResponseDto;
 import com.decxdence.currencyexchange.exception.ApiException;
 import com.decxdence.currencyexchange.exception.DatabaseException;
-import com.decxdence.currencyexchange.exception.InvalidPathException;
 import com.decxdence.currencyexchange.exception.MissingRequiredFieldException;
 import com.decxdence.currencyexchange.service.CurrencyService;
 import com.fasterxml.jackson.databind.ObjectMapper;

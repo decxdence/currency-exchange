@@ -50,7 +50,7 @@ public class ExchangeRateServlet extends HttpServlet {
 
         try {
             parseRate(rate);
-            sendResponse(resp, 200, exchangeRateService.update(code1, code2, new ExchangeRateUpdateRequestDto(
+            sendResponse(resp, 201, exchangeRateService.update(code1, code2, new ExchangeRateUpdateRequestDto(
                     new BigDecimal(rate)
             )));
         } catch (ApiException e) {

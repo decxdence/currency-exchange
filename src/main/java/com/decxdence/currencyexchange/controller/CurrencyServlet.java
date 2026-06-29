@@ -2,7 +2,6 @@ package com.decxdence.currencyexchange.controller;
 
 import com.decxdence.currencyexchange.dto.response.ErrorResponseDto;
 import com.decxdence.currencyexchange.exception.ApiException;
-import com.decxdence.currencyexchange.exception.CurrencyNotFoundException;
 import com.decxdence.currencyexchange.exception.InvalidPathException;
 import com.decxdence.currencyexchange.service.CurrencyService;
 import com.fasterxml.jackson.databind.ObjectMapper;

@@ -63,9 +63,9 @@ public class ExchangeRatesServlet extends HttpServlet {
         var targetCode = req.getParameter("targetCurrencyCode");
         var rate = req.getParameter("rate");
 
-        if (baseCode != null || targetCode != null ||  rate != null) {
+        if (baseCode != null && targetCode != null &&  rate != null) {
             try {
-                var bigdecRate = new BigDecimal(baseCode);
+                var bigdecRate = new BigDecimal(rate);
                 return new ExchangeRateCreateRequestDto(
                         baseCode,
                         targetCode,

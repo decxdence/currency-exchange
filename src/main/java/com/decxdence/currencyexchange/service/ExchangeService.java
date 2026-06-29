@@ -94,6 +94,7 @@ public class ExchangeService {
         return BigDecimal.ONE.divide(rateFromUsd, 6, RoundingMode.HALF_EVEN).multiply(rateToUsd);
 
 
+
     }
 
     private CurrencyResponseDto buildCurrencyResponseDto(Currency currency) {

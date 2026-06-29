@@ -4,7 +4,6 @@ import com.decxdence.currencyexchange.exception.DatabaseException;
 import com.decxdence.currencyexchange.model.ExchangeRate;
 import com.decxdence.currencyexchange.util.ConnectionManager;
 
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;

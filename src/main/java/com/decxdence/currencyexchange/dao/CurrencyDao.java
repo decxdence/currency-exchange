@@ -1,6 +1,5 @@
 package com.decxdence.currencyexchange.dao;
 
-import com.decxdence.currencyexchange.exception.CurrencyNotFoundException;
 import com.decxdence.currencyexchange.exception.DatabaseException;
 import com.decxdence.currencyexchange.model.Currency;
 import com.decxdence.currencyexchange.util.ConnectionManager;

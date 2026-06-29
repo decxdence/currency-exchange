@@ -9,7 +9,6 @@ import com.decxdence.currencyexchange.exception.DatabaseException;
 import com.decxdence.currencyexchange.exception.MissingRequiredFieldException;
 import com.decxdence.currencyexchange.model.Currency;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -81,8 +80,7 @@ public class CurrencyService {
     private boolean currencyRequestDtoIsValid(CurrencyRequestDto currencyDto) {
 
         return currencyDto.getCode().matches("^[A-Z]{3}$")
-        && currencyDto.getFullName().matches("^[A-Za-z]$")
-        && currencyDto.getSign().matches("^[A-Za-z]$");
+        && currencyDto.getSign().length() == 3;
 
     }
 

@@ -34,9 +34,9 @@ public class ExchangeRateService {
 
         for (ExchangeRate exchangeRate : exchangeRatesList) {
             var baseCurrency = currencyDao.findById(exchangeRate.getBaseCurrencyId())
-                    .orElseThrow(() -> new RuntimeException("Currency Not Found"));
+                    .orElseThrow(() -> new CurrencyNotFoundException());
             var targetCurrency = currencyDao.findById(exchangeRate.getTargetCurrencyId())
-                    .orElseThrow(() -> new RuntimeException("Currency Not Found"));
+                    .orElseThrow(() -> new CurrencyNotFoundException());
 
             var baseCurrencyDto = buildCurrencyDto(baseCurrency);
             var targetCurrencyDto = buildCurrencyDto(targetCurrency);
@@ -151,8 +151,8 @@ public class ExchangeRateService {
         baseCode = baseCode.toUpperCase();
         targetCode = targetCode.toUpperCase();
 
-        if (baseCode.equals("^[A-Z]{3}")
-        && targetCode.equals("^[A-Z]{3}")
+        if (baseCode.matches("^[A-Z]{3}$")
+        && targetCode.matches("^[A-Z]{3}$")
         && rate.compareTo(BigDecimal.ZERO) > 0) {
             return true;
         }
@@ -166,7 +166,7 @@ public class ExchangeRateService {
         baseCode = baseCode.toUpperCase();
         targetCode = targetCode.toUpperCase();
 
-        if (baseCode.matches("^[A-Z]{3}$]")
+        if (baseCode.matches("^[A-Z]{3}$")
                 && targetCode.matches("^[A-Z]{3}$")) {
             return true;
         }
