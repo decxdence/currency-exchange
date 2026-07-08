@@ -79,7 +79,9 @@ public class CurrencyService {
 
     private boolean currencyRequestDtoIsValid(CurrencyRequestDto currencyDto) {
 
-        return currencyDto.getCode().matches("^[A-Z]{3}$");
+        return currencyDto.getCode().matches("^[A-Z]{3}$")
+                && !currencyDto.getFullName().isBlank()
+                && !currencyDto.getSign().isBlank();
 
     }
 

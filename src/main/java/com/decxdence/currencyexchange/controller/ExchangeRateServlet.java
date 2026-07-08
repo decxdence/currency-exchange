@@ -27,10 +27,9 @@ public class ExchangeRateServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
 
-        var code1 = extractCurrencyCode(req, resp)[0];
-        var code2 = extractCurrencyCode(req, resp)[1];
-
         try {
+            var code1 = extractCurrencyCode(req, resp)[0];
+            var code2 = extractCurrencyCode(req, resp)[1];
             sendResponse(resp, 200, exchangeRateService.findByBaseAndTargetCurrency(
                     new ExchangeRateReadRequestDto(
                             code1,

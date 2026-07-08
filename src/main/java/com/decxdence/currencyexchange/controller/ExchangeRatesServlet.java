@@ -36,7 +36,7 @@ public class ExchangeRatesServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
         try {
-            sendResponse(resp, 200, exchangeRateService.save(validateParameters(req)));
+            sendResponse(resp, 201, exchangeRateService.save(validateParameters(req)));
         } catch (ApiException e) {
             sendError(resp, e, new ErrorResponseDto(e.getMessage()));
         }

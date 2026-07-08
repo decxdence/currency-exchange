@@ -16,7 +16,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 
 @WebServlet("/exchange")
-public class    ExchangeServlet extends HttpServlet {
+public class ExchangeServlet extends HttpServlet {
 
     private static final ExchangeService exchangeService = ExchangeService.getInstance();
     private static final ObjectMapper mapper = new ObjectMapper();
@@ -53,8 +53,7 @@ public class    ExchangeServlet extends HttpServlet {
         var amount = (req.getParameter("amount"));
 
 
-        if (from != null
-                && to != null) {
+        if (from != null && to != null && amount != null && amount.isBlank()) {
             try {
                 BigDecimal bigDecimalAmount = new BigDecimal(amount);
 
