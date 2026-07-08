@@ -79,8 +79,7 @@ public class CurrencyService {
 
     private boolean currencyRequestDtoIsValid(CurrencyRequestDto currencyDto) {
 
-        return currencyDto.getCode().matches("^[A-Z]{3}$")
-        && currencyDto.getSign().length() == 3;
+        return currencyDto.getCode().matches("^[A-Z]{3}$");
 
     }
 

@@ -44,14 +44,12 @@ public class ExchangeRateServlet extends HttpServlet {
     @Override
     protected void doPatch(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
-        var rate = req.getParameter("rate");
-        var code1 = extractCurrencyCode(req, resp)[0];
-        var code2 = extractCurrencyCode(req, resp)[1];
-
         try {
-            parseRate(rate);
-            sendResponse(resp, 201, exchangeRateService.update(code1, code2, new ExchangeRateUpdateRequestDto(
-                    new BigDecimal(rate)
+            var rate = req.getParameter("rate");
+            var code1 = extractCurrencyCode(req, resp)[0];
+            var code2 = extractCurrencyCode(req, resp)[1];
+            sendResponse(resp, 200, exchangeRateService.update(code1, code2, new ExchangeRateUpdateRequestDto(
+                    parseRate(rate)
             )));
         } catch (ApiException e) {
             sendError(resp, e, new ErrorResponseDto(e.getMessage()));
@@ -65,8 +63,6 @@ public class ExchangeRateServlet extends HttpServlet {
         if (pathInfo == null || pathInfo.length() != 7) {
             throw new InvalidPathException();
         }
-
-
 
         String firstCurrencyCode = pathInfo.substring(1, 4);
         String secondCurrencyCode = pathInfo.substring(4);
@@ -89,6 +85,11 @@ public class ExchangeRateServlet extends HttpServlet {
     }
 
     private BigDecimal parseRate(String rate) {
+
+        if (rate == null || rate.isEmpty()) {
+            throw new InvalidRateFormatException();
+        }
+
         try {
             return new BigDecimal(rate);
         } catch (NumberFormatException e) {

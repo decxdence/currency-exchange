@@ -16,7 +16,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 
 @WebServlet("/exchange")
-public class ExchangeServlet extends HttpServlet {
+public class    ExchangeServlet extends HttpServlet {
 
     private static final ExchangeService exchangeService = ExchangeService.getInstance();
     private static final ObjectMapper mapper = new ObjectMapper();
