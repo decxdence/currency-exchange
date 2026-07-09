@@ -82,13 +82,13 @@ public class ExchangeService {
         }
 
         var USDId = currencyDao.findByCode("USD")
-                .orElseThrow(() -> new RuntimeException("Currency not found"))
+                .orElseThrow(() -> new CurrencyNotFoundException())
                 .getId();
         var rateFromUsd = exchangeRateDao.findByBaseAndTargetId(USDId, fromCurrencyId)
-                .orElseThrow(() -> new RuntimeException("Currency not found"))
+                .orElseThrow(() -> new CurrencyNotFoundException())
                 .getRate();
         var rateToUsd = exchangeRateDao.findByBaseAndTargetId(USDId, toCurrencyId)
-                .orElseThrow(() -> new RuntimeException("Currency not found"))
+                .orElseThrow(() -> new CurrencyNotFoundException())
                 .getRate();
 
         return BigDecimal.ONE.divide(rateFromUsd, 6, RoundingMode.HALF_EVEN).multiply(rateToUsd);

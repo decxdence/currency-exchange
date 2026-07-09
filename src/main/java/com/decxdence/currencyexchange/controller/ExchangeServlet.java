@@ -53,7 +53,7 @@ public class ExchangeServlet extends HttpServlet {
         var amount = (req.getParameter("amount"));
 
 
-        if (from != null && to != null && amount != null && amount.isBlank()) {
+        if (from != null && to != null && amount != null && !amount.isBlank()) {
             try {
                 BigDecimal bigDecimalAmount = new BigDecimal(amount);
 
